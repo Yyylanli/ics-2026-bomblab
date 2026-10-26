@@ -99,11 +99,41 @@ int solve_phase_4(uint64_t challenge, char *out, size_t cap) {
 
 int solve_phase_5(uint64_t challenge, char *out, size_t cap) {
     uint32_t values[MAX_FIELDS] = {0};
-    size_t count = 0;
-    (void)challenge;
-    // TODO: 根据 phase_05 的汇编，用 challenge 算出口令中的各个整数，依次存入 values，并把 count 改为整数个数。
+    size_t count = 2;
+
+    static const uint32_t b[12] = {
+        2914, 812, 1668, 2441, 537, 1830, 66, 2175, 302, 2682, 1138, 1350
+    };
+    static const uint32_t c[12] = {
+        56443, 51520, 19574, 6649, 52704, 60966, 11091, 37947, 47300, 22814, 54484, 12471
+    };
+    static const int nxt[12] = {
+        7, 0, 3, 6, 11, 9, 4, 2, 5, -1, 8, 10
+    };
+    static const int start[8] = {
+        1, 0, 7, 2, 3, 6, 4, 11
+    };
+
+    uint32_t sel = (uint32_t)challenge & 0x7u;
+    uint32_t steps = ((uint32_t)(challenge >> 3)) & 0x3u;
+    int cur = start[sel];
+
+    uint32_t x = (uint32_t)(challenge >> 6) ^ (uint32_t)(challenge >> 32)
+               ^ c[cur] ^ 0x55cu;
+    x = x + b[cur];
+    uint32_t answer1 = b[cur];
+
+    for (uint32_t i = 0; i < steps; i++) {
+        cur = nxt[cur];
+        x = (x ^ c[cur]) + b[cur];
+        answer1 = b[cur];
+    }
+
+    values[0] = x;
+    values[1] = answer1;
     return write_answer(out, cap, values, count);
 }
+
 
 int solve_phase_6(uint64_t challenge, char *out, size_t cap) {
     uint32_t values[MAX_FIELDS] = {0};
