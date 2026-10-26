@@ -74,13 +74,28 @@ int solve_phase_3(uint64_t challenge, char *out, size_t cap) {
 }
 
 
+static uint32_t p4_walk(uint32_t t, uint32_t lo, uint32_t hi, uint32_t key)
+{
+    uint32_t mid = lo + ((hi - lo) >> 1);
+    if (mid == t)
+        return (mid + 0x3bu) ^ key;
+    uint32_t node = mid + key;
+    if (t > mid)
+        return (5u * p4_walk(t, mid + 1, hi, key) ^ node) ^ 0x13u;
+    else
+        return (5u * p4_walk(t, lo, mid - 1, key) ^ node) ^ 0x18u;
+}
+
 int solve_phase_4(uint64_t challenge, char *out, size_t cap) {
     uint32_t values[MAX_FIELDS] = {0};
-    size_t count = 0;
-    (void)challenge;
-    // TODO: 根据 phase_04 的汇编，用 challenge 算出口令中的各个整数，依次存入 values，并把 count 改为整数个数。
+    size_t count = 1;
+
+    uint32_t t = (uint32_t)challenge & 0x7fu;
+    uint32_t key = (uint32_t)(challenge >> 7) ^ (uint32_t)(challenge >> 32);
+    values[0] = p4_walk(t, 0, 0x7fu, key);
     return write_answer(out, cap, values, count);
 }
+
 
 int solve_phase_5(uint64_t challenge, char *out, size_t cap) {
     uint32_t values[MAX_FIELDS] = {0};
