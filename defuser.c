@@ -135,13 +135,40 @@ int solve_phase_5(uint64_t challenge, char *out, size_t cap) {
 }
 
 
+static uint32_t p6_rol(uint32_t x, unsigned n) {
+    return (x << n) | (x >> (32 - n));
+}
+static uint32_t p6_ror(uint32_t x, unsigned n) {
+    return (x >> n) | (x << (32 - n));
+}
+static uint32_t p6_op(uint32_t id, uint32_t x) {
+    switch (id) {
+        case 0: return (x ^ (x >> 5)) + 0xa7d4u;
+        case 1: return p6_ror(x, 7);
+        case 2: return p6_rol(x, 2) ^ 0x609u;
+        case 3: return (x ^ 0x6872u) + 8u * x;
+        case 4: return (x + 0x2e19u) ^ (x >> 1);
+        case 5: return ((x << 7) + 0x1a84u) ^ (5u * x);
+    }
+    return 0;
+}
+
 int solve_phase_6(uint64_t challenge, char *out, size_t cap) {
     uint32_t values[MAX_FIELDS] = {0};
-    size_t count = 0;
-    (void)challenge;
-    // TODO: 根据 phase_06 的汇编，用 challenge 算出口令中的各个整数，依次存入 values，并把 count 改为整数个数。
+    size_t count = 1;
+
+    static const uint8_t table[8] = {4, 1, 5, 2, 0, 5, 3, 0};
+
+    uint32_t arg = (uint32_t)(challenge >> 6) ^ (uint32_t)(challenge >> 32);
+    uint32_t ra = p6_op(table[(uint32_t)challenge & 0x7u], arg);
+    uint32_t r1 = ra ^ 0xf91fu;
+    uint32_t rb = p6_op(table[((uint32_t)(challenge >> 3)) & 0x7u], r1);
+    uint32_t answer = rb + 0xdb29u;
+
+    values[0] = answer;
     return write_answer(out, cap, values, count);
 }
+
 
 int solve_secret(uint64_t challenge, uint64_t context, char *out, size_t cap) {
     (void)challenge;
